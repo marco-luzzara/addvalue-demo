@@ -1,19 +1,105 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 group = 'it.addvalue.demo'
 version = '1.0-SNAPSHOT'
+sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
 }
 
+def SPRING_VERSION = '3.1.1'
+def SPRING_CLOUD_FUNCTION_VERSION = '4.0.5'
+def LOG4J_VERSION = '2.17.1'
+def TESTCONTAINERS_VERSION = '1.18.3'
+def GSON_VERSION = '2.10.1'
+
 dependencies {
+    implementation platform("software.amazon.awssdk:bom:2.20.150")
     testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation platform("org.testcontainers:testcontainers-bom:${TESTCONTAINERS_VERSION}")
+
+    // spring
+    implementation "org.springframework.boot:spring-boot-starter:${SPRING_VERSION}"
+    implementation "org.springframework.cloud:spring-cloud-function-adapter-aws:${SPRING_CLOUD_FUNCTION_VERSION}"
+    implementation "org.springframework.cloud:spring-cloud-function-web:${SPRING_CLOUD_FUNCTION_VERSION}"
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${SPRING_VERSION}"
+
+    // junit and assertions
+    testImplementation("org.assertj:assertj-core:3.24.2")
+
+    // aws
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.2'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.11.1'
+    runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.5.1'
+
+    // gson
+    implementation "com.google.code.gson:gson:${GSON_VERSION}"
+
+    // logging
+    implementation "org.apache.logging.log4j:log4j-api:${LOG4J_VERSION}"
+    implementation "org.apache.logging.log4j:log4j-core:${LOG4J_VERSION}"
+    runtimeOnly ("org.apache.logging.log4j:log4j-slf4j-impl:${LOG4J_VERSION}") {
+        exclude group: 'org.slf4j', module: 'log4j-to-slf4j'
+    }
+
+    // junit and assertions
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.assertj:assertj-core"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+
+    // testcontainer
+    testImplementation 'org.testcontainers:localstack'
+    testImplementation "org.testcontainers:junit-jupiter"
+}
+
+var DIST_FOLDER = "${rootProject.buildDir}/dist"
+var ZIP_FILENAME = "general_lambda.zip"
+
+task buildZip(type: Zip) {
+    into('lib') {
+        from(jar)
+        from(configurations.runtimeClasspath)
+    }
+    archiveFileName = ZIP_FILENAME
+    destinationDirectory = file(DIST_FOLDER)
+}
+
+task buildHotReloadFolder(type: Copy) {
+    from zipTree("$DIST_FOLDER/${ZIP_FILENAME}")
+    into "${rootProject.buildDir}/hot-reload"
+
+    dependsOn buildZip
+}
+
+classes {
+    finalizedBy buildZip
 }
 
 test {
     useJUnitPlatform()
+    testLogging {
+        exceptionFormat = 'full'
+    }
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        xml.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.5
+            }
+        }
+    }
 }
