@@ -14,13 +14,12 @@ repositories {
 def SPRING_VERSION = '3.1.1'
 def SPRING_CLOUD_FUNCTION_VERSION = '4.0.5'
 def LOG4J_VERSION = '2.17.1'
-def TESTCONTAINERS_VERSION = '1.18.3'
 def GSON_VERSION = '2.10.1'
 
 dependencies {
     implementation platform("software.amazon.awssdk:bom:2.20.150")
     testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation platform("org.testcontainers:testcontainers-bom:${TESTCONTAINERS_VERSION}")
+    testImplementation platform("org.testcontainers:testcontainers-bom:1.18.3")
 
     // spring
     implementation "org.springframework.boot:spring-boot-starter:${SPRING_VERSION}"
@@ -35,6 +34,8 @@ dependencies {
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.2'
     implementation 'com.amazonaws:aws-lambda-java-events:3.11.1'
     runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.5.1'
+    implementation 'software.amazon.awssdk:s3'
+
 
     // gson
     implementation "com.google.code.gson:gson:${GSON_VERSION}"

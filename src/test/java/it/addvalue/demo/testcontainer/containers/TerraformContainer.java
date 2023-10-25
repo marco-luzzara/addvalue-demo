@@ -51,7 +51,7 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
     }
 
     public enum OutputVar {
-        REST_API_ID("webapp_apigw_rest_api_id")
+        REST_API_ID("demo_apigw_rest_api_id")
         ;
 
         private final String varName;

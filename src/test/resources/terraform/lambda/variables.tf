@@ -13,6 +13,7 @@ variable "lambda_system_properties" {
   type        = object({
     logging_level = string
     spring_active_profile = string
+    function_definition = string
   })
 }
 

@@ -29,20 +29,16 @@ main() {
     ( cd .. && gradle buildHotReloadFolder )
 
     # TODO: add possibility to configure these variables using cmd arguments
-    TERRAFORM_CONTAINER_NAME="terraform_for_localstack"
+    TERRAFORM_CONTAINER_NAME="terraform_for_localstack_demo"
     TERRAFORM_VOLUME_DIR="terraform"
-    LOCALSTACK_CONTAINER_NAME="localstackmain"
+    LOCALSTACK_CONTAINER_NAME="localstackmaindemo"
     LOCALSTACK_VOLUME_DIR="localstack_persistence"
-    LOCALSTACK_API_KEY="$(cat ../cloud/infrastructure/src/testFixtures/resources/localstack/apikey.secret)"
     LOCALSTACK_PORT=4566
-    PERSISTENCE=1
     export TERRAFORM_CONTAINER_NAME
     export TERRAFORM_VOLUME_DIR
     export LOCALSTACK_CONTAINER_NAME
     export LOCALSTACK_VOLUME_DIR
-    export LOCALSTACK_API_KEY
     export LOCALSTACK_PORT
-    export PERSISTENCE
     docker-compose up -d
 
     trap './stop_local.sh' ERR

@@ -1,6 +1,6 @@
 services:
   localstack:
-    container_name: "${LOCALSTACK_CONTAINER_NAME-localstackmain}"
+    container_name: "${LOCALSTACK_CONTAINER_NAME-localstackmaindemo}"
     image: localstack/localstack:latest
     ports:
       - "127.0.0.1:${LOCALSTACK_PORT:-4566}:4566"            # LocalStack Gateway
@@ -10,6 +10,7 @@ services:
       - SERVICES=lambda,s3,apigateway,logs
       - MAIN_DOCKER_NETWORK=localstack_network
       - DEBUG=1
+      - PROVIDER_OVERRIDE_STEPFUNCTIONS=v2
     volumes:
       - "./volumes/${LOCALSTACK_VOLUME_DIR:-localstack_persistence}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -17,7 +18,7 @@ services:
       - localstack_network
 
   terraform:
-    container_name: "${TERRAFORM_CONTAINER_NAME-terraform_for_localstack}"
+    container_name: "${TERRAFORM_CONTAINER_NAME-terraform_for_localstack_demo}"
     image: hashicorp/terraform:1.5.7
     working_dir: /app
     entrypoint: sh -c "sleep inf"
@@ -31,4 +32,4 @@ services:
 
 networks:
   localstack_network:
-    name: localstack_network
+    name: localstack_network_demo

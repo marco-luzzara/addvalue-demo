@@ -17,7 +17,7 @@ fi
 cd "$(dirname "$0")"
 
 main() {
-    LOCALSTACK_CONTAINER_NAME="localstackmain"
+    LOCALSTACK_CONTAINER_NAME="localstackmaindemo"
     docker exec "$LOCALSTACK_CONTAINER_NAME" awslocal apigateway get-rest-apis --output text --query "items[0].id"
 }
 

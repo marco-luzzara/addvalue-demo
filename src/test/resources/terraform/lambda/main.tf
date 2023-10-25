@@ -12,12 +12,12 @@ resource "aws_s3_object" "lambda_distribution_zip" {
   source = var.lambda_dist_path
 }
 
-resource "aws_lambda_function" "api_lambda" {
+resource "aws_lambda_function" "sf_lambda" {
   depends_on = [aws_s3_object.lambda_distribution_zip]
   function_name = var.function_name
   runtime      = "java17"
   handler      = "org.springframework.cloud.function.adapter.aws.FunctionInvoker"
-  role         = 'arn:aws:iam::000000000000:role/faking-role'
+  role         = "arn:aws:iam::000000000000:role/faking-role"
   timeout      = 900
 
   environment {
@@ -26,6 +26,7 @@ resource "aws_lambda_function" "api_lambda" {
         -DMAIN_CLASS=${var.main_class}
         -Dlogging.level.org.springframework=${var.lambda_system_properties.logging_level}
         -Dspring.profiles.active=${var.lambda_system_properties.spring_active_profile}
+        -Dspring.cloud.function.definition=${var.lambda_system_properties.function_definition}
       EOT
     }
   }

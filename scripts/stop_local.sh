@@ -17,9 +17,9 @@ fi
 cd "$(dirname "$0")"
 
 main() {
-    TERRAFORM_CONTAINER_NAME="terraform_for_localstack"
+    TERRAFORM_CONTAINER_NAME="terraform_for_localstack_demo"
     TERRAFORM_VOLUME_DIR="terraform"
-    LOCALSTACK_CONTAINER_NAME="localstackmain"
+    LOCALSTACK_CONTAINER_NAME="localstackmaindemo"
     LOCALSTACK_VOLUME_DIR="localstack_persistence"
     LOCALSTACK_PORT=4566
     export TERRAFORM_CONTAINER_NAME

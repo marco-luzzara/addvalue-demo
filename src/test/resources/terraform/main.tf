@@ -24,9 +24,10 @@ module "fill_lambda" {
   lambda_system_properties = {
     logging_level = "INFO"
     spring_active_profile = var.fill_lambda_spring_active_profile
+    function_definition = "fill"
   }
   function_name = "fillS3BucketLambda"
-  main_class = "it.addvalue.demo.Application"
+  main_class = "it.addvalue.demo.LambdaApplication"
 }
 
 module "process_lambda" {
@@ -38,13 +39,15 @@ module "process_lambda" {
   lambda_system_properties = {
     logging_level = "INFO"
     spring_active_profile = var.process_lambda_spring_active_profile
+    function_definition = "process"
   }
   function_name = "processS3BucketKeysLambda"
-  main_class = "it.addvalue.demo.Application"
+  main_class = "it.addvalue.demo.LambdaApplication"
 }
 
 module "step_function_workflow" {
   source = "./stepfunctions"
+
   fill_bucket_lambda_arn = module.fill_lambda.lambda_arn
   process_bucket_key_lambda_arn = module.process_lambda.lambda_arn
 }
@@ -53,9 +56,12 @@ module "apigateway" {
   source = "./apigateway"
 
   state_machine_arn = module.step_function_workflow.state_machine_arn
+  aws_region = var.aws_region
 }
 
 resource "aws_api_gateway_deployment" "apigw_deployment" {
+  depends_on = [module.apigateway]
+
   rest_api_id = module.apigateway.demo_rest_api_id
   stage_name  = "demo"
 }

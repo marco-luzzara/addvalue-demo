@@ -9,7 +9,7 @@ resource "aws_sfn_state_machine" "demo_state_machine" {
         "CreateS3Bucket": {
           "Type": "Task",
           "Parameters": {
-            "Bucket.$": "$$.Execution.Input.BucketName"
+            "Bucket.$": "$$.Execution.Input.bucketName"
           },
           "Resource": "arn:aws:states:::aws-sdk:s3:createBucket",
           "Next": "FillS3Bucket"
@@ -18,7 +18,8 @@ resource "aws_sfn_state_machine" "demo_state_machine" {
           "Type": "Task",
           "Resource": "${var.fill_bucket_lambda_arn}",
           "Parameters": {
-            "Payload.$": "$"
+            "bucketName.$": "$$.Execution.Input.bucketName",
+            "keyCount.$": "$$.Execution.Input.keyCount"
           },
           "Retry": [
             {
@@ -35,7 +36,7 @@ resource "aws_sfn_state_machine" "demo_state_machine" {
           ],
           "Next": "ProcessS3Keys",
           "ResultSelector": {
-            "BucketName.$": "$$.Execution.Input.BucketName"
+            "bucketName.$": "$$.Execution.Input.bucketName"
           }
         },
         "ProcessS3Keys": {
@@ -74,11 +75,10 @@ resource "aws_sfn_state_machine" "demo_state_machine" {
           "ItemReader": {
             "Resource": "arn:aws:states:::s3:listObjectsV2",
             "Parameters": {
-              "Bucket.$": "$.BucketName"
+              "Bucket.$": "$.bucketName"
             }
           },
           "MaxConcurrency": 1000,
-          "Label": "ProcessS3Keys",
           "End": true
         }
       }
