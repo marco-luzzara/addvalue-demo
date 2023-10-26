@@ -51,9 +51,9 @@ resource "aws_sfn_state_machine" "demo_state_machine" {
               "ProcessS3Key": {
                 "Type": "Task",
                 "Resource": "${var.process_bucket_key_lambda_arn}",
-                "OutputPath": "$.Payload",
                 "Parameters": {
-                  "Payload.$": "$"
+                  "bucketName.$": "$$.Execution.Input.bucketName",
+                  "key.$": "$.Key"
                 },
                 "Retry": [
                   {
