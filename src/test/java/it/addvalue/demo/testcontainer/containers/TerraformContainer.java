@@ -1,7 +1,7 @@
 package it.addvalue.demo.testcontainer.containers;
 
 import com.google.gson.Gson;
-import it.addvalue.demo.testcontainer.helpers.AssertionHelper;
+import it.addvalue.demo.helpers.AssertionHelper;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.testcontainers.containers.GenericContainer;

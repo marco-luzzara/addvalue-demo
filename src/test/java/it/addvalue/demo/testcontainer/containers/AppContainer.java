@@ -2,7 +2,7 @@ package it.addvalue.demo.testcontainer.containers;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
-import it.addvalue.demo.testcontainer.helpers.AssertionHelper;
+import it.addvalue.demo.helpers.AssertionHelper;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -48,6 +48,7 @@ public class AppContainer extends LocalStackContainer {
                 Service.CLOUDWATCHLOGS);
         withEnv(Map.of(
                 "LAMBDA_DOCKER_NETWORK", ((Network.NetworkImpl) NETWORK).getName(),
+                "PROVIDER_OVERRIDE_STEPFUNCTIONS", "v2",
                 "LS_LOG", this.localstackConfig.logLevel
                 ));
     }

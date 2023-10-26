@@ -8,7 +8,7 @@ services:
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - SERVICES=lambda,s3,apigateway,logs
-      - MAIN_DOCKER_NETWORK=localstack_network
+      - LAMBDA_DOCKER_NETWORK=localstack_network_demo
       - DEBUG=1
       - PROVIDER_OVERRIDE_STEPFUNCTIONS=v2
     volumes:

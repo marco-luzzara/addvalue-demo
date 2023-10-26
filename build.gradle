@@ -81,6 +81,7 @@ classes {
 }
 
 test {
+    systemProperty "IntegrationTestsEnabled", System.getProperty("IntegrationTestsEnabled")
     useJUnitPlatform()
     testLogging {
         exceptionFormat = 'full'

@@ -61,6 +61,12 @@ resource "aws_api_gateway_integration_response" "api_integration_response_succes
   resource_id   = aws_api_gateway_resource.run_sf_resource.id
   http_method = "POST"
   status_code = 200
+
+  response_templates = {
+    "application/json" = <<-EOT
+    $util.parseJson($input.path('$.output'))
+    EOT
+  }
 }
 
 resource "aws_api_gateway_integration_response" "api_integration_response_fail" {

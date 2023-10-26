@@ -1,4 +1,4 @@
-package it.addvalue.demo.testcontainer.helpers;
+package it.addvalue.demo.helpers;
 
 import org.testcontainers.containers.Container;
 

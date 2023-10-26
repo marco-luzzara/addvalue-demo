@@ -1,8 +1,11 @@
 package it.addvalue.demo;
 
 import it.addvalue.demo.api.LocalstackApiCaller;
+import it.addvalue.demo.stepfunctions.model.StateOutput;
+import it.addvalue.demo.stepfunctions.model.StepFunctionInput;
 import it.addvalue.demo.testcontainer.containers.AppContainer;
 import it.addvalue.demo.testcontainer.containers.TerraformContainer;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,6 +15,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
+import java.util.List;
 
 @EnabledIfSystemProperty(named = "IntegrationTestsEnabled", matches = "true")
 @Testcontainers
@@ -41,8 +45,13 @@ public class StepFunctionIT {
     @Test
     void runWorkflowWithSuccess() throws IOException, InterruptedException
     {
-        var workflowResponse = localstackApiCaller.callStepFunctions("test-bucket");
+        var workflowResponse = localstackApiCaller.callStepFunctions(new StepFunctionInput("test", 3));
 
-        System.out.println("workflowResponse = " + workflowResponse);
+        Assertions.assertThat(workflowResponse.body()).containsAll(
+                List.of(new StateOutput(0),
+                        new StateOutput(2),
+                        new StateOutput(4)
+                )
+        );
     }
 }
