@@ -62,9 +62,10 @@ resource "aws_api_gateway_integration_response" "api_integration_response_succes
   http_method = "POST"
   status_code = 200
 
+  # the replaceAll is a temp workaround for bug https://github.com/localstack/localstack/issues/9487
   response_templates = {
     "application/json" = <<-EOT
-    $util.parseJson($input.path('$.output'))
+    $util.parseJson($input.json('$.output').replaceAll("'", '"'))
     EOT
   }
 }
