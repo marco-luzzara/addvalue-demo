@@ -27,7 +27,7 @@ public class LambdaConfiguration {
             try (var s3Client = S3Client.builder()
                     .forcePathStyle(true)
                     .httpClient(getSdkHttpClient())
-                    .endpointOverride(URI.create("http://localstackmaindemo:4566"))
+                    .endpointOverride(URI.create(System.getenv("AWS_ENDPOINT_URL")))
                     .build()) {
                 for (var i = 0; i < input.keyCount(); i++) {
                     var objectRequest = PutObjectRequest.builder()
@@ -49,7 +49,7 @@ public class LambdaConfiguration {
             try (var s3Client = S3Client.builder()
                     .forcePathStyle(true)
                     .httpClient(getSdkHttpClient())
-                    .endpointOverride(URI.create("http://localstackmaindemo:4566"))
+                    .endpointOverride(URI.create(System.getenv("AWS_ENDPOINT_URL")))
                     .build()) {
                 var objectRequest = GetObjectRequest.builder()
                         .bucket(input.bucketName())
