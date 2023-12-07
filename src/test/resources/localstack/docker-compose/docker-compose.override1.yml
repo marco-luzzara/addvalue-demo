@@ -1,0 +1,12 @@
+services:
+  localstack:
+    container_name: "${LOCALSTACK_CONTAINER_NAME-localstackmaindemo-test}"
+    volumes: !reset []
+
+  terraform:
+    container_name: "${TERRAFORM_CONTAINER_NAME-terraform_for_localstack_demo-test}"
+    volumes: !reset []
+
+networks:
+  localstack_network:
+    name: "${LOCALSTACK_NETWORK_NAME-localstack_network_demo-test}"

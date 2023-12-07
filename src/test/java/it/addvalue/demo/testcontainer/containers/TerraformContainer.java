@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import it.addvalue.demo.helpers.AssertionHelper;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
@@ -15,15 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class TerraformContainer extends GenericContainer<TerraformContainer> {
-    private static final String IMAGE = "hashicorp/terraform:1.5.7";
+public class TerraformContainer {
     private Map<String, Object> outputVars = new HashMap<>();
-    public TerraformContainer() {
-        super(DockerImageName.parse(IMAGE));
 
-        this.withWorkingDirectory("/app")
-                // sleep is the entrypoint, otherwise the container expect a terraform command and exits immediately
-                .withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withEntrypoint("sh", "-c", "sleep inf"));
+    private ContainerState containerState;
+    public TerraformContainer(ContainerState containerState) {
+        this.containerState = containerState;
     }
 
     public void initialize() {
@@ -31,7 +29,7 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
             this.copyLambdaZipToContainer();
             this.copyTerraformFilesToContainer();
 
-            this.execInContainer("terraform", "init");
+            this.containerState.execInContainer("terraform", "init");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -41,7 +39,7 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
         try {
             createTfOverrideFileForLocalstackProvider(tfVariables);
 
-            var applyCmdExecution = this.execInContainer("sh", "-c", "terraform apply -auto-approve");
+            var applyCmdExecution = this.containerState.execInContainer("sh", "-c", "terraform apply -auto-approve");
             AssertionHelper.assertContainerCmdSuccessful(applyCmdExecution);
 
             this.populateOutputVarFromTerraform();
@@ -68,11 +66,11 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
         var zipPath = Path.of("").resolve("build").resolve("dist").resolve("general_lambda.zip");
         if (Files.notExists(zipPath))
             throw new IllegalStateException("Make sure the buildZip task is executed");
-        this.copyFileToContainer(MountableFile.forHostPath(zipPath, 444), "/app/general_lambda.zip");
+        this.containerState.copyFileToContainer(MountableFile.forHostPath(zipPath, 444), "/app/general_lambda.zip");
     }
 
     private void populateOutputVarFromTerraform() throws IOException, InterruptedException {
-        var outputVarJson = this.execInContainer("terraform", "output", "-json").getStdout();
+        var outputVarJson = this.containerState.execInContainer("terraform", "output", "-json").getStdout();
         var gson = new Gson();
         this.outputVars = gson.fromJson(outputVarJson, this.outputVars.getClass());
     }
@@ -83,7 +81,7 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
                 .formatted(tfVariables.accessKey(),
                         tfVariables.secretKey(),
                         "http://%s:%s".formatted(tfVariables.localstackHostname(), tfVariables.localstackPort()));
-        this.copyFileToContainer(Transferable.of(providerOverrideTf), "/app/provider_override.tf");
+        this.containerState.copyFileToContainer(Transferable.of(providerOverrideTf), "/app/provider_override.tf");
     }
 
     /**
@@ -115,7 +113,7 @@ public class TerraformContainer extends GenericContainer<TerraformContainer> {
                 throw new RuntimeException(e);
             }
         }).forEach(tfResourcePath -> { // I receive paths like terraform/module/file.tf
-            this.copyFileToContainer(MountableFile.forClasspathResource(tfResourcePath),
+            this.containerState.copyFileToContainer(MountableFile.forClasspathResource(tfResourcePath),
                     "/app" + tfResourcePath.substring("terraform".length()));
         });
     }

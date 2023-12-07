@@ -4,53 +4,41 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
 import it.addvalue.demo.helpers.AssertionHelper;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 
-public class AppContainer extends LocalStackContainer {
-    public final String NETWORK_ALIAS = "localstack";
+public class AppContainer {
+    private final ContainerState containerState;
+    public final String accessKey = "accesskey";
+    public final String secretKey = "secretkey";
+    public final int localstackPort = 4566;
     private static final System.Logger LOGGER = System.getLogger(AppContainer.class.getName());
-    public final Network NETWORK = Network.SHARED;
-    private static final DockerImageName localstackImage = DockerImageName.parse("localstack/localstack:latest");
     private static final String DEPLOYMENT_STAGE_NAME = "demo";
     private String restApiId;
     private final LocalstackConfig localstackConfig;
 
     private static final String GET_LOGS_FROM_CW_SCRIPT_NAME = "aws-get-last-logs.sh";
 
-    public AppContainer()
+    public AppContainer(ContainerState containerState)
     {
-        this(new LocalstackConfig(false, "info"));
+        this(containerState, new LocalstackConfig(false, "info"));
     }
 
-    public AppContainer(LocalstackConfig localstackConfig)
+    public AppContainer(ContainerState containerState, LocalstackConfig localstackConfig)
     {
-        super(localstackImage);
-
+        this.containerState = containerState;
         this.localstackConfig = localstackConfig;
-
-        // https://joerg-pfruender.github.io/software/testing/2020/09/27/localstack_and_lambda.html#1-networking
-        withNetwork(NETWORK);
-        withNetworkAliases(NETWORK_ALIAS);
-        // 4566 - standard port
-        withExposedPorts(4566);
-        withServices(
-                Service.LAMBDA,
-                Service.API_GATEWAY,
-                Service.S3,
-                Service.CLOUDWATCHLOGS);
-        withEnv(Map.of(
-                "LAMBDA_DOCKER_NETWORK", ((Network.NetworkImpl) NETWORK).getName(),
-                "PROVIDER_OVERRIDE_STEPFUNCTIONS", "v2",
-                "LS_LOG", this.localstackConfig.logLevel
-                ));
     }
 
     /**
@@ -59,31 +47,34 @@ public class AppContainer extends LocalStackContainer {
     public void initialize(TerraformContainer terraform) throws IOException, InterruptedException {
         terraform.initialize();
         terraform.apply(new TerraformContainer.TfVariables(
-                this.getAccessKey(),
-                this.getSecretKey(),
-                NETWORK_ALIAS,
-                4566
+                this.accessKey,
+                this.secretKey,
+                this.containerState.getContainerId(),
+                this.localstackPort
         ));
         this.restApiId = terraform.getOutputVar(TerraformContainer.OutputVar.REST_API_ID);
 
         this.copyScriptToContainer("localstack/scripts/%s".formatted(GET_LOGS_FROM_CW_SCRIPT_NAME));
-
-        this.followOutput(outFrame ->
-                LOGGER.log(System.Logger.Level.INFO,
-                        "%s - %s".formatted(outFrame.getType(), outFrame.getUtf8String())));
     }
 
     public void printCloudwatchLogs() throws IOException, InterruptedException {
         this.execScriptInContainer(GET_LOGS_FROM_CW_SCRIPT_NAME);
     }
 
-    public void logAndPossiblyDestroyLambda() {
-        var thisNetworkId = Objects.requireNonNull(this.getNetwork()).getId();
+    public void printMainInstanceLogs() {
+        LOGGER.log(System.Logger.Level.INFO, this.containerState.getLogs());
+    }
+
+    public void logLambdaAndPossiblyDestroyThem() {
+        var thisNetworkId = this.containerState.getCurrentContainerInfo()
+                        .getNetworkSettings().getNetworks().values().stream()
+                        .findFirst().orElseThrow().getNetworkID();
         // lambda containers are not removed after the test because spawned by the localstack
         // container, and not directly by testcontainers. use docker api to
         // remove all lambda containers connected to the same network as localstack
 
         final String LAMBDA_IMAGE = "public.ecr.aws/lambda/java";
+        var dockerClient = this.containerState.getDockerClient();
         dockerClient.listContainersCmd()
                 .exec()
                 .stream()
@@ -140,14 +131,27 @@ public class AppContainer extends LocalStackContainer {
         return URI.create("%s/%s".formatted(this.getEndpoint(), urlPart));
     }
 
+    // copied from the LocalstackContainer class, available through the Localstack module for testcontainers
+    private URI getEndpoint() {
+        try {
+            final String address = this.containerState.getHost();
+            // resolve IP address and use that as the endpoint so that path-style access is automatically used for S3
+            String ipAddress = InetAddress.getByName(address).getHostAddress();
+            return new URI("http://" + ipAddress + ":" + this.containerState.getMappedPort(this.localstackPort));
+        } catch (UnknownHostException | URISyntaxException e) {
+            throw new IllegalStateException("Cannot obtain endpoint URL", e);
+        }
+    }
+
     private void copyScriptToContainer(String scriptResourcePath) throws IOException, InterruptedException {
         var scriptResource = new PathMatchingResourcePatternResolver().getResource(scriptResourcePath);
-        this.copyFileToContainer(Transferable.of(scriptResource.getContentAsByteArray()), "/" + scriptResource.getFilename());
-        this.execInContainer("chmod", "+x", "/" + scriptResource.getFilename());
+        this.containerState.copyFileToContainer(Transferable.of(scriptResource.getContentAsByteArray()),
+                "/" + scriptResource.getFilename());
+        this.containerState.execInContainer("chmod", "+x", "/" + scriptResource.getFilename());
     }
 
     private void execScriptInContainer(String scriptName) throws IOException, InterruptedException {
-        var executeScriptCmd = this.execInContainer("/" + scriptName);
+        var executeScriptCmd = this.containerState.execInContainer("/" + scriptName);
         AssertionHelper.assertContainerCmdSuccessful(executeScriptCmd);
     }
 

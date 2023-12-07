@@ -19,7 +19,7 @@ def GSON_VERSION = '2.10.1'
 dependencies {
     implementation platform("software.amazon.awssdk:bom:2.20.150")
     testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation platform("org.testcontainers:testcontainers-bom:1.18.3")
+    testImplementation platform("org.testcontainers:testcontainers-bom:1.19.3")
 
     // spring
     implementation "org.springframework.boot:spring-boot-starter:${SPRING_VERSION}"
@@ -55,6 +55,7 @@ dependencies {
     // testcontainer
     testImplementation 'org.testcontainers:localstack'
     testImplementation "org.testcontainers:junit-jupiter"
+    testImplementation 'org.testcontainers:testcontainers'
 }
 
 var DIST_FOLDER = "${rootProject.buildDir}/dist"
